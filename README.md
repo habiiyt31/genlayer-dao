@@ -349,7 +349,7 @@ genlayer write --address 0xCONTRACT --function register_member \
 genlayer write --address 0xCONTRACT --function submit_proposal \
   --args "Increase validator rewards" \
   "Proposal to increase validator rewards by 15% to attract more node operators to the network." \
-  "https://forum.example.com/proposal-42"
+  "https://github.com/solana-foundation/solana-improvement-documents/blob/main/proposals/0096-reward-collected-priority-fee-in-entirety.md"
 
 # Vote YES (as registered member)
 genlayer write --address 0xCONTRACT --function vote --args 0 true
@@ -369,7 +369,7 @@ genlayer write --address 0xCONTRACT --function fund_treasury --value 10000000000
 genlayer write --address 0xCONTRACT --function submit_application \
   --args "GenLayer DevKit" \
   "A CLI toolkit that streamlines GenLayer contract development with hot reload, local testing, and type hints." \
-  "https://github.com/example/devkit"
+  "https://github.com/filecoin-project/devgrants/blob/master/Program%20Resources/Open%20Grants%20README.md"
 
 # Owner closes, finalizes, distributes
 genlayer write --address 0xCONTRACT --function close_applications
@@ -393,7 +393,7 @@ genlayer write --address 0xCONTRACT --function register_checker --args 0xCHECKER
 genlayer write --address 0xCONTRACT --function submit_for_review \
   --args "Treasury allocation vote" \
   "Proposal to allocate 25% of treasury to marketing efforts in Q4." \
-  "https://forum.example.com/proposal-99"
+  "https://github.com/ArbitrumFoundation/governance/blob/main/docs/overview.md"
 
 # Query result
 genlayer call --address 0xCONTRACT --function is_allowed --args 0

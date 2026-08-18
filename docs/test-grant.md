@@ -82,7 +82,7 @@ Click **Deploy** → copy contract address.
 - **Input:**
   - `title`: `GenLayer Contract Testing Framework`
   - `description`: `An automated testing framework for GenLayer Intelligent Contracts that enables local simulation of validator consensus, mock LLM responses, and CI/CD integration. Addresses the biggest pain point for GenLayer devs today.`
-  - `project_url`: `https://github.com/example/genlayer-test-framework`
+  - `project_url`: `https://github.com/genlayerlabs/genlayer-testing-suite`
 - **Expected:**
   - Wait **60-120 seconds**
   - Returns verdict with `TIER:HIGH` and score ~25
@@ -95,7 +95,7 @@ Click **Deploy** → copy contract address.
 - **Input:**
   - `title`: `GenLayer Block Explorer`
   - `description`: `A simple block explorer for GenLayer testnet that shows transactions, contract calls, and validator votes. Uses the public GenLayer RPC. Will be maintained for 6 months after delivery.`
-  - `project_url`: `https://github.com/example/genlayer-explorer`
+  - `project_url`: `https://github.com/genlayerlabs/genlayer-studio`
 - **Expected:** Returns verdict, likely `TIER:MEDIUM`
 
 #### Step 10: Verify scores
@@ -115,8 +115,8 @@ Click **Deploy** → copy contract address.
 
 - **title:** `My Awesome Idea`
 - **description:** `I have this idea to make GenLayer better. I will build something cool that will definitely help the ecosystem grow. Trust me it will be great and everyone will use it.`
-- **project_url:** `https://example.com`
-- **Expected:** Returns verdict with `TIER:LOW`, score ~8
+- **project_url:** `https://github.com/torvalds/linux/blob/master/README`
+- **Expected:** Returns verdict with `TIER:LOW`, score ~8 — Linux kernel README tidak nyambung sama sekali dengan grant purpose
 
 ✅ AI filters low-quality applications correctly.
 

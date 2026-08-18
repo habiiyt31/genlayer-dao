@@ -92,7 +92,7 @@ Register Member A with voting power 60:
 - **Input:**
   - `title`: `Increase validator node incentives by 15%`
   - `description`: `This proposal requests increasing the validator node reward pool by 15% to attract more node operators to the GenLayer network, improving decentralization and resilience against validator dropout.`
-  - `action_url`: `https://gist.github.com/example/validator-incentives`
+  - `action_url`: `https://github.com/solana-foundation/solana-improvement-documents/blob/main/proposals/0096-reward-collected-priority-fee-in-entirety.md`
 - **Expected:**
   - Wait **60-120 seconds** (web fetch + LLM evaluate + consensus)
   - Returns: `"ACTIVE <reason>"` or `"REJECTED <reason>"`
@@ -112,8 +112,8 @@ Submit a clearly off-topic or spammy proposal:
 
 - **title:** `Buy my NFT collection it's great`
 - **description:** `We should use DAO treasury to buy my personal NFT collection because it will definitely go up in value and make the DAO rich beyond all imagination please vote yes.`
-- **action_url:** `https://example.com`
-- **Expected:** ✅ `"REJECTED"` — AI filters out spam
+- **action_url:** `https://github.com/torvalds/linux/blob/master/README`
+- **Expected:** ✅ `"REJECTED"` — AI filters out spam (Linux kernel README tidak relevan dengan DAO mission)
 
 ---
 

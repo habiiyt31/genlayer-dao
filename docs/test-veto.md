@@ -135,7 +135,7 @@ Click **Deploy** → copy contract address.
 - **Input:**
   - `title`: `Allocate 5% treasury to dev grants`
   - `description`: `Proposal to allocate 5% of the current DAO treasury (well within the 20% cap) to fund 3 open-source developer tool projects for Q4.`
-  - `action_url`: `https://gist.github.com/example/dao-proposal-5pct`
+  - `action_url`: `https://github.com/DA0-DA0/governance/blob/main/constitution.md`
 - **Expected:**
   - Wait **60-120 seconds**
   - Returns: `"ALLOWED no violations found"` (5% < 20% cap, open-source = rule 4 satisfied)
@@ -161,7 +161,7 @@ Click **Deploy** → copy contract address.
 - **Input:**
   - `title`: `Allocate 50% treasury to marketing`
   - `description`: `Emergency proposal to allocate 50% of the DAO treasury to a marketing campaign targeting enterprise customers. The team believes this will 10x the number of validators in 6 months.`
-  - `action_url`: `https://gist.github.com/example/dao-proposal-50pct`
+  - `action_url`: `https://github.com/ArbitrumFoundation/governance/blob/main/docs/overview.md`
 - **Expected:**
   - Wait **60-120 seconds**
   - Returns: `"VETOED Rule 1 violated: 50% exceeds the 20% single-vote allocation cap"` ✅
@@ -184,7 +184,7 @@ Click **Deploy** → copy contract address.
 
 - **title:** `Give founding team 60% voting power`
 - **description:** `Proposal to restructure the DAO token allocation so that the founding team holds 60% of voting power to enable faster decision making and reduce governance gridlock on critical protocol decisions.`
-- **action_url:** `https://gist.github.com/example/dao-proposal-power`
+- **action_url:** `https://github.com/pyth-network/governance/blob/main/docs/constitution/pyth-dao-constitution.md`
 - **Expected:** `"VETOED Rule 2 violated: 60% exceeds the 40% single-member voting power cap"` ✅
 
 ---
@@ -197,7 +197,7 @@ Click **Deploy** → copy contract address.
 - **Input:**
   - `title`: `Owner direct review test`
   - `description`: `Testing that the owner can submit governance actions for constitutional review without needing to be in the checker registry.`
-  - `action_url`: `https://example.com`
+  - `action_url`: `https://github.com/genlayerlabs/genlayer-studio`
 - **Expected:** ✅ No "Not a registered checker" error — owner always has access
 
 ---

@@ -114,7 +114,7 @@ Deploy fresh contract, fund it, then:
 
 - **Method:** `submit_milestone`
 - **Input:**
-  - `deliverable_url`: `https://www.figma.com/file/example/genlayer-dashboard`
+  - `deliverable_url`: `https://github.com/cosmos/cosmos/blob/master/VALIDATORS_FAQ.md`
   - `notes`: `Completed 6 screens: overview, validators, transactions, contracts, block detail, and settings. All screens are interactive and linked.`
 - **Expected:**
   - Wait **60-120 seconds** (web fetch + LLM strict_eq consensus)
@@ -140,7 +140,7 @@ Deploy fresh contract, fund it, then:
 
 - **Method:** `submit_milestone`
 - **Input:**
-  - `deliverable_url`: `https://github.com/example/genlayer-dashboard`
+  - `deliverable_url`: `https://github.com/genlayerlabs/genlayer-studio`
   - `notes`: `React app deployed to Vercel. 3 live charts pulling from GenLayer testnet RPC: validator count over time, daily tx volume, and contract call heatmap.`
 - **Expected:** ✅ `"APPROVED"` → Hunter receives 60% = **3 GEN**
 
@@ -154,7 +154,7 @@ Deploy fresh contract, fund it, then:
 
 - **Method:** `submit_milestone`
 - **Input:**
-  - `deliverable_url`: `https://genlayer-dashboard.vercel.app`
+  - `deliverable_url`: `https://github.com/genlayerlabs/genlayer-docs`
   - `notes`: `Live at the URL above. README covers local setup, environment variables, and how to point at mainnet when available.`
 - **Expected:** ✅ `"APPROVED"` → Hunter receives 20% = **1 GEN**, state → `"COMPLETED"`
 
@@ -166,7 +166,7 @@ Redeploy. Fund. Claim (as Hunter). Submit a bad URL:
 
 #### Step 14: `submit_milestone(url, notes)` — bad deliverable
 
-- **URL:** `https://example.com` (empty page, no Figma)
+- **URL:** `https://github.com/torvalds/linux/blob/master/README` (isi tidak relevan sama sekali dengan kriteria milestone)
 - **Expected:** `"REJECTED"` — state → `"DISPUTED"`
 
 #### Step 15: Check dispute state
@@ -185,7 +185,7 @@ Redeploy. Fund. Claim (as Hunter). Submit a bad URL:
 
 - **Method:** `retry_milestone`
 - **Input:**
-  - `new_url`: `https://www.figma.com/file/example/genlayer-dashboard`
+  - `new_url`: `https://github.com/cosmos/cosmos/blob/master/VALIDATORS_FAQ.md`
   - `notes`: `Fixed — now pointing to actual Figma file with all 6 screens.`
 - **Expected:** ✅ Re-triggers AI verification, state → `"APPROVED"` (or DISPUTED again)
 
@@ -280,7 +280,7 @@ Full bounty flow — happy path:
 [Hunter]
 3. claim_bounty() → state: CLAIMED ✅
 
-4. submit_milestone(figma_url, notes)
+4. submit_milestone(cosmos_validators_url, notes)
    → wait 90s → AI strict_eq evaluates
    → APPROVED → 1 GEN to Hunter ✅ (20%)
 
