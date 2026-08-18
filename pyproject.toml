@@ -1,0 +1,45 @@
+[project]
+name = "genlayer-dao"
+version = "0.1.0"
+description = "DAO & Governance Intelligent Contract library for GenLayer — Proposal, Grant, Bounty, Veto"
+readme = { file = "README_PYPI.md", content-type = "text/markdown" }
+requires-python = ">=3.8"
+
+authors = [
+  { name = "habibiiyt", email = "habiiyt31@gmail.com" }
+]
+
+license = { text = "MIT" }
+
+keywords = [
+  "genlayer",
+  "dao",
+  "governance",
+  "smart-contract",
+  "blockchain",
+  "web3",
+  "intelligent-contract"
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Repository = "https://github.com/habiiyt31/genlayer-dao"
+
+[project.scripts]
+genlayer-dao = "genlayer_dao.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["genlayer_dao"]
+
+[tool.setuptools.package-data]
+genlayer_dao = ["*.py"]

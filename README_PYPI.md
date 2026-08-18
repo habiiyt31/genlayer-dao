@@ -1,0 +1,78 @@
+# genlayer-dao
+
+> **DAO & Governance Intelligent Contracts for GenLayer**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GenLayer](https://img.shields.io/badge/Built%20on-GenLayer-orange)](https://docs.genlayer.com)
+[![PyPI](https://img.shields.io/pypi/v/genlayer-dao)](https://pypi.org/project/genlayer-dao/)
+
+A library of **4 production-ready Intelligent Contracts** that bring AI-powered DAO governance onto the GenLayer blockchain. Run proposals, grant rounds, bounties, and constitutional vetoes — all with trustless LLM consensus, no server, no admin key.
+
+## The 4 contracts
+
+| Contract | What it does |
+|---|---|
+| `dao_proposal.py` | AI-triaged proposals + token-weighted voting |
+| `dao_grant.py` | Rubric-based AI grant scoring + auto-distribution |
+| `dao_bounty.py` | Multi-milestone bounty with per-milestone AI verification |
+| `dao_veto.py` | Constitutional AI veto — blocks rule-violating actions |
+
+## Installation
+
+```bash
+pip install genlayer-dao
+```
+
+Also install the linter and GenLayer CLI:
+
+```bash
+pip install genvm-linter
+npm install -g genlayer
+```
+
+## Getting the contract files
+
+```bash
+genlayer-dao init
+```
+
+Creates `contracts/` with all 4 contracts:
+
+```
+contracts/
+├── dao_proposal.py
+├── dao_grant.py
+├── dao_bounty.py
+└── dao_veto.py
+```
+
+Or copy individually:
+
+```bash
+genlayer-dao proposal
+genlayer-dao grant
+genlayer-dao bounty
+genlayer-dao veto
+```
+
+## CLI
+
+| Command | Description |
+|---|---|
+| `genlayer-dao init` | Copy all 4 contracts |
+| `genlayer-dao proposal` | Copy proposal contract |
+| `genlayer-dao grant` | Copy grant contract |
+| `genlayer-dao bounty` | Copy bounty contract |
+| `genlayer-dao veto` | Copy veto contract |
+| `genlayer-dao list` | Show available contracts |
+
+## Prerequisites
+
+- **Python 3.8+**
+- **Node.js 18+**
+- **Docker 26+** (local Studio only)
+- **Funded GenLayer account** — [testnet faucet](https://testnet-faucet.genlayer.foundation/)
+
+## License
+
+MIT
