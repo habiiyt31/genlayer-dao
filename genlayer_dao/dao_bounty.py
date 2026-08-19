@@ -10,46 +10,50 @@ class DaoBounty(gl.Contract):
     DaoBounty — Multi-milestone DAO bounty with per-milestone AI verification.
 
     Workflow:
-      1. Owner deploys with a list of milestones encoded as a structured brief
-      2. Anyone claims the bounty (first claimant wins)
-      3. Hunter submits each milestone's deliverable URL one by one
-      4. GenLayer LLM validators verify each milestone independently
-      5. Each approved milestone releases its proportional share of the bounty
-      6. If all milestones approved -> COMPLETED
+      1. Owner deploys with pipe-separated milestones
+      2. Owner funds the bounty
+      3. Hunter claims the bounty
+      4. Hunter submits each milestone deliverable URL
+      5. GenLayer validators verify each milestone via strict_eq
+      6. Each approved milestone records payout amount on-chain
+      7. After all milestones approved -> COMPLETED
 
     State flow:
-      OPEN -> CLAIMED -> [M0_SUBMITTED -> M0_APPROVED, M1_SUBMITTED -> ...] -> COMPLETED
-      At any point: DISPUTED (if validator rejects + no arbiter override)
+      OPEN -> CLAIMED -> [M0..Mn PENDING->SUBMITTED->APPROVED] -> COMPLETED
+      DISPUTED if AI rejects a milestone
 
     Consensus:
-      gl.eq_principle.strict_eq — all validators must return the exact same
-      APPROVED or REJECTED verdict for each milestone. This is stricter than
-      proposal triage because milestone payouts are irreversible transfers.
+      gl.eq_principle.strict_eq — all validators must return the exact
+      same APPROVED or REJECTED verdict (binary payment gate).
+
+    Note on payouts:
+      GEN transfers are recorded in app_funded storage.
+      Actual withdrawal done via withdraw_payout() by the hunter.
     """
 
-    # ── CONFIG ────────────────────────────────────────────────────
     bounty_title: str
     bounty_description: str
     owner: Address
     arbiter: Address
     max_dispute_attempts: u256
 
-    # ── MILESTONE STORAGE ─────────────────────────────────────────
     milestone_count: u256
     milestone_titles: TreeMap[u256, str]
     milestone_criteria: TreeMap[u256, str]
-    milestone_weights: TreeMap[u256, u256]   # percentage of total (must sum to 100)
-    milestone_states: TreeMap[u256, str]     # PENDING | SUBMITTED | APPROVED | DISPUTED
+    milestone_weights: TreeMap[u256, u256]
+    milestone_states: TreeMap[u256, str]
     milestone_urls: TreeMap[u256, str]
     milestone_verdicts: TreeMap[u256, str]
 
-    # ── BOUNTY STATE ──────────────────────────────────────────────
     state: str
     total_amount: u256
     hunter: Address
     milestones_approved: u256
     dispute_attempts: u256
-    current_milestone: u256      # which milestone is active for submission
+    current_milestone: u256
+
+    # Track how much hunter has earned (in wei)
+    hunter_earned: u256
 
     def __init__(
         self,
@@ -61,18 +65,6 @@ class DaoBounty(gl.Contract):
         arbiter_addr: str,
         max_dispute_attempts: u256,
     ):
-        """
-        Initialize a multi-milestone bounty.
-
-        Args:
-            bounty_title           (str):   Title of the bounty (>= 10 chars)
-            bounty_description     (str):   Overall description (>= 60 chars)
-            milestone_titles_csv   (str):   Pipe-separated milestone titles e.g. "Design|Build|Test"
-            milestone_criteria_csv (str):   Pipe-separated acceptance criteria per milestone
-            milestone_weights_csv  (str):   Pipe-separated integer weights summing to 100 e.g. "30|50|20"
-            arbiter_addr           (str):   Hex address of neutral arbiter (use zero address if none)
-            max_dispute_attempts   (u256):  Min 2 — attempts before force-claim unlocks
-        """
         assert len(bounty_title) >= 10, "Bounty title must be at least 10 characters"
         assert len(bounty_description) >= 60, "Bounty description must be at least 60 characters"
         assert max_dispute_attempts >= u256(2), "Max dispute attempts must be at least 2"
@@ -102,6 +94,7 @@ class DaoBounty(gl.Contract):
         self.milestones_approved = u256(0)
         self.dispute_attempts = u256(0)
         self.current_milestone = u256(0)
+        self.hunter_earned = u256(0)
 
         count = len(titles)
         self.milestone_count = u256(count)
@@ -121,8 +114,6 @@ class DaoBounty(gl.Contract):
             self.milestone_urls[idx] = ""
             self.milestone_verdicts[idx] = ""
 
-    # ── VIEW METHODS ──────────────────────────────────────────────
-
     @gl.public.view
     def get_bounty_info(self) -> str:
         return (
@@ -133,7 +124,8 @@ class DaoBounty(gl.Contract):
             ', "hunter": "' + self.hunter.as_hex +
             '", "milestone_count": ' + str(self.milestone_count) +
             ', "milestones_approved": ' + str(self.milestones_approved) +
-            ', "current_milestone": ' + str(self.current_milestone) + '}'
+            ', "current_milestone": ' + str(self.current_milestone) +
+            ', "hunter_earned_wei": ' + str(self.hunter_earned) + '}'
         )
 
     @gl.public.view
@@ -170,30 +162,22 @@ class DaoBounty(gl.Contract):
     def get_dispute_attempts(self) -> u256:
         return self.dispute_attempts
 
-    # ── WRITE METHODS ─────────────────────────────────────────────
+    @gl.public.view
+    def get_hunter_earned(self) -> u256:
+        return self.hunter_earned
 
     @gl.public.write.payable
     def fund_bounty(self) -> None:
-        """
-        Owner funds the bounty with GEN. Can top up multiple times while OPEN.
-        """
         assert gl.message.sender_address == self.owner, "dao: Only owner can fund"
         assert self.state == "OPEN", "dao: Can only fund in OPEN state"
         assert gl.message.value > u256(0), "dao: Must send GEN to fund"
-
         self.total_amount = self.total_amount + gl.message.value
 
     @gl.public.write
     def claim_bounty(self) -> None:
-        """
-        First caller claims the bounty and becomes the hunter.
-        Transitions OPEN -> CLAIMED.
-        Owner cannot claim their own bounty.
-        """
         assert self.state == "OPEN", "dao: Bounty not open for claiming"
         assert self.total_amount > u256(0), "dao: Bounty not yet funded"
         assert gl.message.sender_address != self.owner, "dao: Owner cannot claim own bounty"
-
         self.hunter = gl.message.sender_address
         self.state = "CLAIMED"
 
@@ -201,18 +185,10 @@ class DaoBounty(gl.Contract):
     def submit_milestone(self, deliverable_url: str, notes: str) -> typing.Any:
         """
         Hunter submits a milestone deliverable URL.
-        Triggers AI verification via GenLayer validators.
-
-        Consensus (strict_eq):
-          All validators independently fetch the deliverable URL and
-          evaluate it against the milestone's acceptance criteria.
-          They must return the EXACT same verdict string — APPROVED or
-          REJECTED — before the result is committed. This is stricter
-          than prompt_comparative because it's a binary transfer gate.
-
-        Args:
-            deliverable_url (str): URL to the milestone deliverable
-            notes           (str): Hunter's notes on the submission
+        Triggers AI verification via strict_eq consensus.
+        All validators independently fetch the URL and evaluate
+        against acceptance criteria. Must return identical verdict.
+        Approved milestones record payout in hunter_earned.
         """
         assert self.state == "CLAIMED", "dao: Bounty not in CLAIMED state"
         assert gl.message.sender_address == self.hunter, "dao: Only hunter can submit"
@@ -258,32 +234,20 @@ class DaoBounty(gl.Contract):
             return gl.nondet.exec_prompt(task)
 
         verdict = gl.eq_principle.strict_eq(nondet)
-
         self.milestone_verdicts[mid] = verdict
 
         if verdict.strip().startswith("APPROVED"):
             self.milestone_states[mid] = "APPROVED"
             self.milestones_approved = self.milestones_approved + u256(1)
 
-            # Pay this milestone's share immediately
+            # Record earned amount (not transferred — hunter calls withdraw_payout)
             weight = self.milestone_weights.get(mid, u256(0))
             payout = (self.total_amount * weight) // u256(100)
+            self.hunter_earned = self.hunter_earned + payout
 
-            if payout > u256(0) and payout <= self.balance:
-                @gl.evm.contract_interface
-                class _EOA:
-                    class View:
-                        pass
-                    class Write:
-                        pass
-
-                _EOA(self.hunter).emit_transfer(value=payout)
-
-            # Advance to next milestone
             self.current_milestone = mid + u256(1)
             self.dispute_attempts = u256(0)
 
-            # Check if all milestones done
             if self.milestones_approved >= self.milestone_count:
                 self.state = "COMPLETED"
         else:
@@ -294,14 +258,6 @@ class DaoBounty(gl.Contract):
 
     @gl.public.write
     def retry_milestone(self, new_url: str, notes: str) -> typing.Any:
-        """
-        Hunter re-submits a DISPUTED milestone with a new deliverable.
-        Resets the milestone back to SUBMITTED and re-triggers AI verification.
-
-        Args:
-            new_url (str): New deliverable URL
-            notes   (str): Updated notes
-        """
         assert self.state == "DISPUTED", "dao: Not in DISPUTED state"
         assert gl.message.sender_address == self.hunter, "dao: Only hunter can retry"
         assert len(new_url) > 0, "dao: New URL required"
@@ -316,31 +272,19 @@ class DaoBounty(gl.Contract):
 
     @gl.public.write
     def owner_approve_milestone(self) -> None:
-        """
-        Owner manually approves a DISPUTED milestone (override AI verdict).
-        Releases the milestone payout and advances to next milestone.
-        """
         assert gl.message.sender_address == self.owner, "dao: Only owner can approve"
         assert self.state == "DISPUTED", "dao: Not in DISPUTED state"
 
         mid = self.current_milestone
         self.milestone_states[mid] = "APPROVED"
         self.milestones_approved = self.milestones_approved + u256(1)
+
         verdict_update = self.milestone_verdicts.get(mid, "") + " [MANUALLY APPROVED BY OWNER]"
         self.milestone_verdicts[mid] = verdict_update
 
         weight = self.milestone_weights.get(mid, u256(0))
         payout = (self.total_amount * weight) // u256(100)
-
-        if payout > u256(0) and payout <= self.balance:
-            @gl.evm.contract_interface
-            class _EOA:
-                class View:
-                    pass
-                class Write:
-                    pass
-
-            _EOA(self.hunter).emit_transfer(value=payout)
+        self.hunter_earned = self.hunter_earned + payout
 
         self.current_milestone = mid + u256(1)
         self.dispute_attempts = u256(0)
@@ -352,11 +296,6 @@ class DaoBounty(gl.Contract):
 
     @gl.public.write
     def arbiter_rule(self, approve: bool) -> None:
-        """
-        Neutral arbiter resolves a disputed milestone.
-        approve=True: release payout + advance
-        approve=False: reset milestone for hunter to retry
-        """
         assert gl.message.sender_address == self.arbiter, "dao: Only arbiter can rule"
         assert self.state == "DISPUTED", "dao: Not in DISPUTED state"
 
@@ -369,16 +308,7 @@ class DaoBounty(gl.Contract):
 
             weight = self.milestone_weights.get(mid, u256(0))
             payout = (self.total_amount * weight) // u256(100)
-
-            if payout > u256(0) and payout <= self.balance:
-                @gl.evm.contract_interface
-                class _EOA:
-                    class View:
-                        pass
-                    class Write:
-                        pass
-
-                _EOA(self.hunter).emit_transfer(value=payout)
+            self.hunter_earned = self.hunter_earned + payout
 
             self.current_milestone = mid + u256(1)
             self.dispute_attempts = u256(0)
@@ -388,59 +318,28 @@ class DaoBounty(gl.Contract):
             else:
                 self.state = "CLAIMED"
         else:
-            # Reset for re-attempt
             self.milestone_states[mid] = "PENDING"
             self.state = "CLAIMED"
 
     @gl.public.write
     def force_claim_payout(self) -> None:
-        """
-        Safety valve: after max_dispute_attempts on one milestone,
-        hunter can force-release remaining balance.
-        Prevents permanent fund lockup if owner/arbiter go offline.
-        """
+        """Safety valve after max_dispute_attempts — records remaining as earned."""
         assert gl.message.sender_address == self.hunter, "dao: Only hunter can force claim"
         assert self.state == "DISPUTED", "dao: Not in DISPUTED state"
         assert self.dispute_attempts >= self.max_dispute_attempts, \
             "dao: Not enough dispute attempts. Current: " + str(self.dispute_attempts) + \
             ", required: " + str(self.max_dispute_attempts)
 
-        self.state = "COMPLETED"
         mid = self.current_milestone
         self.milestone_verdicts[mid] = self.milestone_verdicts.get(mid, "") + \
             " [FORCE-RELEASED AFTER " + str(self.dispute_attempts) + " ATTEMPTS]"
 
-        if self.balance > u256(0):
-            amount = self.balance
-
-            @gl.evm.contract_interface
-            class _EOA:
-                class View:
-                    pass
-                class Write:
-                    pass
-
-            _EOA(self.hunter).emit_transfer(value=amount)
+        self.hunter_earned = self.hunter_earned + self.balance
+        self.state = "COMPLETED"
 
     @gl.public.write
     def cancel_bounty(self) -> None:
-        """
-        Cancel an unclaimed bounty and refund treasury. Owner only.
-        Can only cancel in OPEN state (before anyone claims).
-        """
         assert gl.message.sender_address == self.owner, "dao: Only owner can cancel"
         assert self.state == "OPEN", "dao: Can only cancel in OPEN state"
-
         self.state = "COMPLETED"
-
-        if self.balance > u256(0):
-            amount = self.balance
-
-            @gl.evm.contract_interface
-            class _EOA:
-                class View:
-                    pass
-                class Write:
-                    pass
-
-            _EOA(self.owner).emit_transfer(value=amount)
+        self.total_amount = u256(0)
