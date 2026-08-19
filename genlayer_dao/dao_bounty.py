@@ -228,8 +228,8 @@ class DaoBounty(gl.Contract):
                 "=== YOUR TASK ===\n"
                 "Does this submission meet ALL acceptance criteria for this milestone?\n"
                 "Be strict. Partial completion is REJECTED.\n"
-                "Respond with ONLY 'APPROVED' or 'REJECTED' as the first word, "
-                "followed by a single-sentence reason."
+                "Respond with exactly one word: APPROVED or REJECTED. "
+                "Do not provide any explanation or additional text."
             )
             return gl.nondet.exec_prompt(task)
 
